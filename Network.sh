@@ -1,7 +1,7 @@
 PRIMARY_INTERFACE="em1"
 SECONDARY_INTERFACE="p3p1"
 SUBNET_ADDR="192.168.10.0/24"
-
+EXTERNAL_FIREWALL_IP="192.168.0.17"
 
 PS3='Is this Firewall Host or Internal Host(Enter number): '
 select opt in Firewall Host Reset Exit
@@ -12,10 +12,7 @@ do
 			ifconfig $SECONDARY_INTERFACE 192.168.10.2 up
 			route add default gw 192.168.10.1
 
-			echo 'domain ad.bcit.ca' > /etc/resolv.conf
-			echo 'search ad.bcit.ca' > /etc/resolv.conf
-			echo 'nameserver 142.232.191.38' > /etc/resolv.conf
-			echo 'nameserver 142.232.191.39' > /etc/resolv.conf
+			echo 'nameserver 8.8.8.8' > /etc/resolv.conf
 
 			echo "Internal Host Setup complete."
 			break
@@ -24,9 +21,14 @@ do
 		Firewall)
 			ifconfig $SECONDARY_INTERFACE 192.168.10.1 up
 			echo "1" > /proc/sys/net/ipv4/ip_forward
+			echo 'nameserver 8.8.8.8' > /etc/resolv.conf
+
 			route add -net 192.168.0.0 netmask 255.255.255.0 gw 192.168.0.100
 			route add -net $SUBNET_ADDR gw 192.168.10.1
 			
+			iptables -t nat -A POSTROUTING -s $SUBNET_ADDR -o $PRIMARY_INTERFACE -j SNAT --to-source $EXTERNAL_FIREWALL_IP
+			iptables -t nat -A PREROUTING -i $PRIMARY_INTERFACE -j DNAT --to-destination 192.168.10.2
+
 			echo "Firewall setup complete."
 			echo "Deploying Firewall Rules.."
 			chmod +x A2.sh
