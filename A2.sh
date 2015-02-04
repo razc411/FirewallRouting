@@ -43,16 +43,9 @@ $FW_PROGRAM_DIR$FW_NAME -A INPUT -i $EXTERNAL_INTERFACE -d $INTERNAL_FIREWALL_HO
 $FW_PROGRAM_DIR$FW_NAME -A INPUT -i $EXTERNAL_INTERFACE -s 192.168.10.0/24 -j DROP
 $FW_PROGRAM_DIR$FW_NAME -A INPUT -i $EXTERNAL_INTERFACE -p tcp -m multiport --dports 32768:32775,137:139,111,515 -j DROP
 
-#NAT Forwarding
-arr=$(echo $ALLOWED_TCP_PORTS | tr "," "\n")
-for PORT in $arr
-	do iptables -t nat -A PREROUTING -i em1 -p tcp --dport $PORT -j DNAT --to-destination 192.168.10.2
-done
-
-arr=$(echo $ALLOWED_UDP_PORTS | tr "," "\n")
-for PORT in $arr
-	do iptables -t nat -A PREROUTING -i em1 -p udp --dport $PORT -j DNAT --to-destination 192.168.10.2
-done
+#NAT Forwarding rules
+$FW_PROGRAM_DIR$FW_NAME -t nat -A POSTROUTING -s $SUBNET_ADDR -o $EXTERNAL_INTERFACE -j SNAT --to-source $EXTERNAL_FIREWALL_IP
+$FW_PROGRAM_DIR$FW_NAME -t nat -A PREROUTING -i $EXTERNAL_INTERFACE -j DNAT --to-destination 192.168.10.2
 
 #Drop all TCP packets with the SYN and FIN bit set
 $FW_PROGRAM_DIR$FW_NAME -A INPUT -p tcp --tcp-flags ALL SYN,FIN -j DROP

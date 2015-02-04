@@ -26,8 +26,6 @@ do
 
 			route add -net 192.168.0.0 netmask 255.255.255.0 gw 192.168.0.100
 			route add -net $SUBNET_ADDR gw 192.168.10.1
-			iptables -t nat -A POSTROUTING -s $SUBNET_ADDR -o $PRIMARY_INTERFACE -j SNAT --to-source $EXTERNAL_FIREWALL_IP
-			iptables -t nat -A PREROUTING -i $PRIMARY_INTERFACE -j DNAT --to-destination 192.168.10.2
 			
 			echo "Firewall setup complete."
 			echo "Deploying Firewall Rules.."
