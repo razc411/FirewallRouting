@@ -12,11 +12,11 @@
 #                          USER CONFIGUREABLE SECTION                                   #
 #########################################################################################
 
-ALLOWED_TCP_PORTS="89,86,88,443,80"
-ALLOWED_UDP_PORTS="89,86,88,443,80"
+ALLOWED_TCP_PORTS="89,86,88,443,80,53"
+ALLOWED_UDP_PORTS="89,86,88,443,80,53,67,68"
 ALLOWED_ICMP_PACKET_TYPES="1,2,3"
 INTERNAL_FIREWALL_HOST="192.168.10.1"
-EXTERNAL_FIREWALL_IP="192.168.0.17"
+EXTERNAL_FIREWALL_IP="192.168.0.9"
 EXTERNAL_INTERFACE="em1"
 SUBNET_ADDR="192.168.10.0/24"
 INTERNAL_INTERFACE="p3p1"
@@ -29,6 +29,8 @@ FW_NAME='iptables'
 
 #Clear Rules & Policies
 $FW_PROGRAM_DIR$FW_NAME -F
+$FW_PROGRAM_DIR$FW_NAME -t nat -F
+$FW_PROGRAM_DIR$FW_NAME -t mangle -F
 $FW_PROGRAM_DIR$FW_NAME -X
 
 #Set default policies to DROP
@@ -52,10 +54,6 @@ for PORT in $arr
 	do iptables -t nat -A PREROUTING -i em1 -p udp --dport $PORT -j DNAT --to-destination 192.168.10.2
 done
 
-iptables -t nat -A POSTROUTING -s $SUBNET_ADDR -o $EXTERNAL_INTERFACE -j SNAT --to-source $EXTERNAL_FIREWALL_IP
-iptables -t nat -A PREROUTING -i $EXTERNAL_INTERFACE -j DNAT --to-destination 192.168.10.2
-iptables -t nat -A POSTROUTING -o em1 -j MASQUERADE
-
 #Drop all TCP packets with the SYN and FIN bit set
 $FW_PROGRAM_DIR$FW_NAME -A INPUT -p tcp --tcp-flags ALL SYN,FIN -j DROP
 
@@ -77,15 +75,6 @@ for PORT in $arr
 	   $FW_PROGRAM_DIR$FW_NAME -A FORWARD -p udp -m state --state ESTABLISHED,NEW --sport $PORT -j ACCEPT
 done
 
-#Allow DHCP on all adapters
-$FW_PROGRAM_DIR$FW_NAME -A INPUT -p udp -m state --state ESTABLISHED,NEW --sport 67:68 --dport 67:68 -j ACCEPT
-
-#Allow DNS on all adapters
-$FW_PROGRAM_DIR$FW_NAME -A OUTPUT -p udp -m state --state ESTABLISHED,NEW --dport 53 -j ACCEPT
-$FW_PROGRAM_DIR$FW_NAME -A OUTPUT -p tcp -m state --state ESTABLISHED,NEW --dport 53 -j ACCEPT
-$FW_PROGRAM_DIR$FW_NAME -A INPUT -p udp -m state --state ESTABLISHED,NEW --sport 53 -j ACCEPT
-$FW_PROGRAM_DIR$FW_NAME -A INPUT -p tcp -m state --state ESTABLISHED,NEW --sport 53 -j ACCEPT
-
 #Inbound/Outbound ICMP packets based on type numbers
 arr=$(echo $ALLOWED_ICMP_PACKET_TYPES | tr "," "\n")
 for TYPE in $arr
@@ -93,8 +82,8 @@ for TYPE in $arr
 done
 
 #Accept fragments
-$FW_PROGRAM_DIR$FW_NAME -A INPUT -i $EXTERNAL_INTERFACE -f -j ACCEPT
-$FW_PROGRAM_DIR$FW_NAME -A INPUT -i $INTERNAL_INTERFACE -f -j ACCEPT
+$FW_PROGRAM_DIR$FW_NAME -A FORWARD -i $EXTERNAL_INTERFACE -f -j ACCEPT
+$FW_PROGRAM_DIR$FW_NAME -A FORWARD -i $INTERNAL_INTERFACE -f -j ACCEPT
 
 #Set control connections to Minimum delay for FTP and SSH services
 $FW_PROGRAM_DIR$FW_NAME -A PREROUTING -t mangle -p tcp --sport 21 -j TOS --set-tos Minimize-Delay
