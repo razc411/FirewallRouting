@@ -18,6 +18,7 @@ ALLOWED_ICMP_PACKET_TYPES="1,2,3"
 INTERNAL_FIREWALL_HOST="192.168.10.1"
 EXTERNAL_FIREWALL_IP="192.168.0.17"
 EXTERNAL_INTERFACE="em1"
+SUBNET_ADDR="192.168.10.0/24"
 INTERNAL_INTERFACE="p3p1"
 FW_PROGRAM_DIR='/sbin/'
 FW_NAME='iptables'
@@ -39,6 +40,21 @@ $FW_PROGRAM_DIR$FW_NAME -P OUTPUT DROP
 $FW_PROGRAM_DIR$FW_NAME -A INPUT -i $EXTERNAL_INTERFACE -d $INTERNAL_FIREWALL_HOST -j DROP
 $FW_PROGRAM_DIR$FW_NAME -A INPUT -i $EXTERNAL_INTERFACE -s 192.168.10.0/24 -j DROP
 $FW_PROGRAM_DIR$FW_NAME -A INPUT -i $EXTERNAL_INTERFACE -p tcp -m multiport --dports 32768:32775,137:139,111,515 -j DROP
+
+#NAT Forwarding
+arr=$(echo $ALLOWED_TCP_PORTS | tr "," "\n")
+for PORT in $arr
+	do iptables -t nat -A PREROUTING -i em1 -p tcp --dport $PORT -j DNAT --to-destination 192.168.10.2
+done
+
+arr=$(echo $ALLOWED_UDP_PORTS | tr "," "\n")
+for PORT in $arr
+	do iptables -t nat -A PREROUTING -i em1 -p udp --dport $PORT -j DNAT --to-destination 192.168.10.2
+done
+
+iptables -t nat -A POSTROUTING -s $SUBNET_ADDR -o $EXTERNAL_INTERFACE -j SNAT --to-source $EXTERNAL_FIREWALL_IP
+iptables -t nat -A PREROUTING -i $EXTERNAL_INTERFACE -j DNAT --to-destination 192.168.10.2
+iptables -t nat -A POSTROUTING -o em1 -j MASQUERADE
 
 #Drop all TCP packets with the SYN and FIN bit set
 $FW_PROGRAM_DIR$FW_NAME -A INPUT -p tcp --tcp-flags ALL SYN,FIN -j DROP
