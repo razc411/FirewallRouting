@@ -24,7 +24,6 @@ do
 			echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
 			echo 'nameserver 8.8.8.8' > /etc/resolv.conf
 
-			route add -net 192.168.0.0 netmask 255.255.255.0 gw 192.168.0.100
 			route add -net $SUBNET_ADDR gw 192.168.10.1
 			
 			echo "Firewall setup complete."
@@ -41,7 +40,6 @@ do
 			iptables -F
 			iptables -t nat -F
 			iptables -t mangle -F
-			route del -net 192.168.0.0 netmask 255.255.255.0 gw 192.168.0.100
 			route del -net $SUBNET_ADDR gw 192.168.10.1
 			route del default gw 192.168.10.1
 			iptables -X 

@@ -64,8 +64,8 @@ done
 #Inbound/Outbound UDP packets on allowed ports
 arr=$(echo $ALLOWED_UDP_PORTS | tr "," "\n")
 for PORT in $arr
-	do $FW_PROGRAM_DIR$FW_NAME -A FORWARD -p udp -m state --state ESTABLISHED,NEW --dport $PORT -j ACCEPT
-	   $FW_PROGRAM_DIR$FW_NAME -A FORWARD -p udp -m state --state ESTABLISHED,NEW --sport $PORT -j ACCEPT
+	do $FW_PROGRAM_DIR$FW_NAME -A FORWARD -p udp --dport $PORT -j ACCEPT
+	   $FW_PROGRAM_DIR$FW_NAME -A FORWARD -p udp --sport $PORT -j ACCEPT
 done
 
 #Inbound/Outbound ICMP packets based on type numbers
