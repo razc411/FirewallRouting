@@ -10,7 +10,7 @@ do
 		Host)
 			ifconfig $PRIMARY_INTERFACE down
 			ifconfig $SECONDARY_INTERFACE 192.168.10.2 up
-			route add default gw 192.168.10.1
+			route add -net 192.168.10.0 gw $EXTERNAL_FIREWALL_IP netmask 255.255.255.0
 
 			echo 'nameserver 8.8.8.8' > /etc/resolv.conf
 
@@ -24,12 +24,20 @@ do
 			echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
 			echo 'nameserver 8.8.8.8' > /etc/resolv.conf
 
-			route add -net $SUBNET_ADDR gw 192.168.10.1
+			route add 192.168.10.0/24 gw 192.168.10.1
+			route add default gw 192.168.0.100
+			route add -net 192.168.0.0/24 gw 0.0.0.0
 			
 			echo "Firewall setup complete."
 			echo "Deploying Firewall Rules.."
 			chmod +x A2.sh
 			./A2.sh
+			break
+			;;
+
+		Test)
+			route add default gw 192.168.10.1
+			route add -net 192.168.10.0/24 gw 0.0.0.0
 			break
 			;;
 
@@ -40,8 +48,6 @@ do
 			iptables -F
 			iptables -t nat -F
 			iptables -t mangle -F
-			route del -net $SUBNET_ADDR gw 192.168.10.1
-			route del default gw 192.168.10.1
 			iptables -X 
 
 			iptables -P INPUT ACCEPT
