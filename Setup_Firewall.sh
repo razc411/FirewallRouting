@@ -69,7 +69,7 @@ done
 #Inbound/Outbound ICMP packets based on type numbers
 arr=$(echo $ALLOWED_ICMP_PACKET_TYPES | tr "," "\n")
 for TYPE in $arr
-	do $FW_PROGRAM_DIR$FW_NAME -A FORWARD -p icmp --icmp-type $TYPE -m state --state ESTABLISHED,NEW,RELATED -j ACCEPT
+	do $FW_PROGRAM_DIR$FW_NAME -A FORWARD -p icmp --icmp-type $TYPE -m state --state ESTABLISHED,NEW -j ACCEPT
 done
 
 #Accept fragments
