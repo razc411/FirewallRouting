@@ -1,10 +1,11 @@
+#===================CONFIG========================#
 PRIMARY_INTERFACE="em1"
 SECONDARY_INTERFACE="p3p1"
 SUBNET_ADDR="192.168.10.0/24"
 EXTERNAL_FIREWALL_IP="192.168.0.9"
-
+#==========DO NOT EDIT BELOW THIS LINE============#
 PS3='Is this Firewall Host or Internal Host(Enter number): '
-select opt in Firewall Host Reset Exit
+select opt in Firewall Host Test Reset Exit
 do
 	case $opt in
 		Host)
@@ -30,14 +31,16 @@ do
 			
 			echo "Firewall setup complete."
 			echo "Deploying Firewall Rules.."
-			chmod +x A2.sh
-			./A2.sh
+			chmod +x Setup_Firewall.sh
+			./Setup_Firewall.sh
 			break
 			;;
 
 		Test)
 			route add default gw 192.168.10.1
 			route add -net 192.168.10.0/24 gw 0.0.0.0
+
+			echo "Test computer setup complete."
 			break
 			;;
 
