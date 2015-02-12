@@ -2,7 +2,7 @@
 PRIMARY_INTERFACE="em1"
 SECONDARY_INTERFACE="p3p1"
 SUBNET_ADDR="192.168.10.0/24"
-EXTERNAL_FIREWALL_IP="192.168.0.9"
+EXTERNAL_FIREWALL_IP="192.168.0.14"
 #==========DO NOT EDIT BELOW THIS LINE============#
 PS3='Is this Firewall Host or Internal Host(Enter number): '
 select opt in Firewall Host Test Reset Exit
@@ -11,7 +11,7 @@ do
 		Host)
 			ifconfig $PRIMARY_INTERFACE down
 			ifconfig $SECONDARY_INTERFACE 192.168.10.2 up
-			route add -net 192.168.10.0 gw $EXTERNAL_FIREWALL_IP netmask 255.255.255.0
+			route add default gw 192.168.10.1
 
 			echo 'nameserver 8.8.8.8' > /etc/resolv.conf
 
@@ -25,9 +25,9 @@ do
 			echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
 			echo 'nameserver 8.8.8.8' > /etc/resolv.conf
 
-			route add 192.168.10.0/24 gw 192.168.10.1
-			route add default gw 192.168.0.100
-			route add -net 192.168.0.0/24 gw 0.0.0.0
+			route add -net $SUBNET_ADDR gw 192.168.10.1
+			route add -net 192.168.0.0/24 gw $EXTERNAL_FIREWALL_IP
+			iptables -t nat -A POSTROUTING -o $PRIMARY_INTERFACE -j MASQUERADE		
 			
 			echo "Firewall setup complete."
 			echo "Deploying Firewall Rules.."
@@ -45,6 +45,7 @@ do
 			;;
 
 		Reset)
+			ifconfig $PRIMARY_INTERFACE down
 			ifconfig $PRIMARY_INTERFACE up
 			ifconfig $SECONDARY_INTERFACE down
 
