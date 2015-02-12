@@ -46,10 +46,6 @@ $FW_PROGRAM_DIR$FW_NAME -A INPUT -i $EXTERNAL_INTERFACE -s 192.168.10.0/24 -j DR
 $FW_PROGRAM_DIR$FW_NAME -A INPUT -i $EXTERNAL_INTERFACE -p tcp -m multiport --dports $BLOCKED_TCP -j DROP
 $FW_PROGRAM_DIR$FW_NAME -A INPUT -i $EXTERNAL_INTERFACE -p udp -m multiport --dports $BLOCKED_UDP -j DROP
 
-#NAT Forwarding rules
-$FW_PROGRAM_DIR$FW_NAME -t nat -A POSTROUTING -s $SUBNET_ADDR -o $EXTERNAL_INTERFACE -j SNAT --to-source $EXTERNAL_FIREWALL_IP
-$FW_PROGRAM_DIR$FW_NAME -t nat -A PREROUTING -i $EXTERNAL_INTERFACE -j DNAT --to-destination 192.168.10.2
-
 #Drop all TCP packets with the SYN and FIN bit set
 $FW_PROGRAM_DIR$FW_NAME -A INPUT -p tcp --tcp-flags ALL SYN,FIN -j DROP
 
@@ -73,7 +69,7 @@ done
 #Inbound/Outbound ICMP packets based on type numbers
 arr=$(echo $ALLOWED_ICMP_PACKET_TYPES | tr "," "\n")
 for TYPE in $arr
-	do $FW_PROGRAM_DIR$FW_NAME -A FORWARD -p icmp --icmp-type $TYPE -m state --state ESTABLISHED,NEW -j ACCEPT
+	do $FW_PROGRAM_DIR$FW_NAME -A FORWARD -p icmp --icmp-type $TYPE -m state --state ESTABLISHED,NEW,RELATED -j ACCEPT
 done
 
 #Accept fragments
